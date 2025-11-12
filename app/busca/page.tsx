@@ -2,89 +2,138 @@
 
 import { useState } from "react";
 import {
+  Box,
   Grid,
-  Paper,
   TextField,
   Button,
   Typography,
-  Box,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
 export default function Busca() {
   const [cep, setCep] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [dados, setDados] = useState<any>(null);
 
-  const handleBuscar = () => {
-    if (!cep.trim()) {
-      alert("Por favor, digite um CEP válido.");
-      return;
+  const handleBuscar = async () => {
+    if (!cep) return;
+    setLoading(true);
+    setDados(null);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      setDados(data);
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    } finally {
+      setLoading(false);
     }
-    // Aqui futuramente você pode adicionar a função que consulta a API de CEP
-    console.log("Buscando CEP:", cep);
   };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f5f5f5",
         p: 2,
       }}
     >
       <Paper
         elevation={4}
         sx={{
-          p: 4,
-          borderRadius: 3,
-          maxWidth: 500,
+          p: { xs: 3, md: 6 },
+          maxWidth: 600,
           width: "100%",
-          textAlign: "center",
+          borderRadius: 3,
         }}
       >
-        <Typography variant="h4" fontWeight={600} gutterBottom>
-          Buscar CEP
-        </Typography>
+        <Grid container spacing={3}>
+          {/* Cabeçalho */}
+          <Grid size={{ xs: 12}}>
+            <Typography
+              variant="h4"
+              component="h1"
+              fontWeight={700}
+              textAlign="center"
+              color="primary"
+            >
+              Busca de CEP
+            </Typography>
+            <Typography
+              variant="body1"
+              textAlign="center"
+              color="text.secondary"
+              mt={1}
+            >
+              Digite o CEP abaixo para buscar informações do endereço.
+            </Typography>
+          </Grid>
 
-        <Typography variant="body1" color="text.secondary" mb={3}>
-          Digite o CEP abaixo para consultar o endereço correspondente.
-        </Typography>
-
-        <Grid
-          container
-          spacing={2}
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Grid size={{xs:12}}>
+          {/* Campo de busca */}
+          <Grid size={{ xs: 12, sm: 8 }}>
             <TextField
               fullWidth
               label="Digite o CEP"
               variant="outlined"
               value={cep}
               onChange={(e) => setCep(e.target.value)}
-              inputProps={{ maxLength: 9 }}
+              inputProps={{ maxLength: 8 }}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4}}>
+          {/* Botão */}
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Button
+              fullWidth
               variant="contained"
               color="primary"
-              fullWidth
               size="large"
               startIcon={<SearchIcon />}
               onClick={handleBuscar}
-              sx={{
-                height: "100%",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
+              sx={{ height: "100%" }}
             >
               Buscar
             </Button>
+          </Grid>
+
+          {/* Resultado */}
+          <Grid size={{ xs: 12 }}>
+            {loading ? (
+              <Box textAlign="center" mt={2}>
+                <CircularProgress color="primary" />
+              </Box>
+            ) : dados ? (
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "#e3f2fd",
+                }}
+              >
+                {dados.erro ? (
+                  <Typography color="error" textAlign="center">
+                    CEP não encontrado.
+                  </Typography>
+                ) : (
+                  <>
+                    <Typography variant="h6" color="primary" gutterBottom>
+                      Resultado:
+                    </Typography>
+                    <Typography><strong>Logradouro:</strong> {dados.logradouro}</Typography>
+                    <Typography><strong>Bairro:</strong> {dados.bairro}</Typography>
+                    <Typography><strong>Cidade:</strong> {dados.localidade}</Typography>
+                    <Typography><strong>Estado:</strong> {dados.uf}</Typography>
+                  </>
+                )}
+              </Box>
+            ) : null}
           </Grid>
         </Grid>
       </Paper>
